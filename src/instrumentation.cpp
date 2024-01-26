@@ -70,36 +70,43 @@ extern "C" void InstrumentationCallbackDispatcher(CONTEXT* ContextRecord)
 
         RtlAcquireSRWLockShared(&InstrumentationCallbackLock);
 
-        if (ContextRecord->Rip == (ULONG_PTR)&KiRaiseUserExceptionDispatcher)
-        {
-            if (RaiseUserExceptionCallback)
-				RaiseUserExceptionCallback(ContextRecord);
-        }
-        if (ContextRecord->Rip == (ULONG_PTR)&KiUserApcDispatcher)
-        {
-            if (UserApcCallback)
-                KiUserApcDispatcherStub(ContextRecord);
-        }
-        else if (ContextRecord->Rip == (ULONG_PTR)&KiUserCallbackDispatcher)
-        {
-            if (UserWin32Callback)
-				KiUserCallbackDispatcherStub(ContextRecord);
-        }
-        else if (ContextRecord->Rip == (ULONG_PTR)&KiUserExceptionDispatcher)
-        {
-            if (UserExceptionCallback != NULL)
-                KiUserExceptionDispatcherStub(ContextRecord);
-        }
-        else if (ContextRecord->Rip == (ULONG_PTR)&LdrInitializeThunk)
-        {
-            if (UserThreadStartCallback != NULL)
-                UserThreadStartCallback((CONTEXT*)ContextRecord->Rcx, (void*)ContextRecord->Rdx);
-        }
-        else
-        {
-            if (SystemCallReturnCallback != NULL)
-                SystemCallReturnCallback(ContextRecord, (NTSTATUS)ContextRecord->Rax);
-        }
+		switch (ContextRecord->Rip)
+		{
+			case (ULONG_PTR)&KiRaiseUserExceptionDispatcher:
+			{
+				if (RaiseUserExceptionCallback)
+					RaiseUserExceptionCallback(ContextRecord);
+				break;
+			}
+			case (ULONG_PTR)&KiUserApcDispatcher:
+			{
+				if (UserApcCallback)
+					KiUserApcDispatcherStub(ContextRecord);
+				break;
+			}
+			case (ULONG_PTR)&KiUserCallbackDispatcher:
+			{
+				if (UserWin32Callback)
+					KiUserCallbackDispatcherStub(ContextRecord);
+				break;
+			}
+			case (ULONG_PTR)&KiUserExceptionDispatcher:
+			{
+				if (UserExceptionCallback)
+					KiUserExceptionDispatcherStub(ContextRecord);
+				break;
+			}
+			case (ULONG_PTR)&LdrInitializeThunk:
+			{
+				if (UserThreadStartCallback)
+					UserThreadStartCallback((CONTEXT*)ContextRecord->Rcx, (void*)ContextRecord->Rdx);
+			}
+			default:
+			{
+				if (SystemCallReturnCallback)
+					SystemCallReturnCallback(ContextRecord, (NTSTATUS)ContextRecord->Rax);
+			}
+		}
 
         RtlReleaseSRWLockShared(&InstrumentationCallbackLock);
 
