@@ -13,9 +13,9 @@ EXTERNDEF __imp_RtlRestoreContext : QWORD
         call    __imp_RtlCaptureContext
         sub     rsp, 20h
         call    InstrumentationCallbackDispatcher
-		  add		rsp, 20h
-		  mov		rcx, rsp
-		  xor		rdx, rdx
-		  call	__imp_RtlRestoreContext
+	add	rsp, 20h
+	mov	rcx, rsp
+	xor	rdx, rdx
+	call	__imp_RtlRestoreContext
     InstrumentationCallbackStub endp
 end
