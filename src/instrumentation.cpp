@@ -28,15 +28,15 @@ extern "C" void InstrumentationCallbackStub();
 
 inline void KiUserApcDispatcherStub(CONTEXT* ContextRecord)
 {
-    CONTEXT* pReturnContextRecord = (CONTEXT*)(ContextRecord->Rsp);
+	CONTEXT* pReturnContextRecord = (CONTEXT*)(ContextRecord->Rsp);
 
-    UserApcCallback(
-        pReturnContextRecord,
-        (void*)pReturnContextRecord->P1Home,
-        (void*)pReturnContextRecord->P2Home,
-        (void*)pReturnContextRecord->P3Home,
-        (PKNORMAL_ROUTINE)pReturnContextRecord->P4Home
-    );
+	UserApcCallback(
+		pReturnContextRecord,
+        	(void*)pReturnContextRecord->P1Home,
+        	(void*)pReturnContextRecord->P2Home,
+		(void*)pReturnContextRecord->P3Home,
+		(PKNORMAL_ROUTINE)pReturnContextRecord->P4Home
+	);
 }
 
 inline void KiUserCallbackDispatcherStub(CONTEXT* ContextRecord)
@@ -50,25 +50,25 @@ inline void KiUserCallbackDispatcherStub(CONTEXT* ContextRecord)
 
 inline void KiUserExceptionDispatcherStub(CONTEXT* ContextRecord)
 {
-    UserExceptionCallback(
-        (CONTEXT*)(ContextRecord->Rsp),
-        (EXCEPTION_RECORD*)(ContextRecord->Rsp + sizeof(CONTEXT) + 0x20)
-    );
+	UserExceptionCallback(
+        	(CONTEXT*)(ContextRecord->Rsp),
+        	(EXCEPTION_RECORD*)(ContextRecord->Rsp + sizeof(CONTEXT) + 0x20)
+    	);
 }
 
 extern "C" void InstrumentationCallbackDispatcher(CONTEXT* ContextRecord)
 {
-    TEB* pTeb = NtCurrentTeb();
+	TEB* pTeb = NtCurrentTeb();
 
-    ContextRecord->Rip = pTeb->InstrumentationCallbackPreviousPc;
-    ContextRecord->Rsp = pTeb->InstrumentationCallbackPreviousSp;
-    ContextRecord->Rcx = ContextRecord->R10;
+	ContextRecord->Rip = pTeb->InstrumentationCallbackPreviousPc;
+	ContextRecord->Rsp = pTeb->InstrumentationCallbackPreviousSp;
+	ContextRecord->Rcx = ContextRecord->R10;
 
-    if (!pTeb->InstrumentationCallbackDisabled)
-    {
-        pTeb->InstrumentationCallbackDisabled = TRUE;
+	if (!pTeb->InstrumentationCallbackDisabled)
+	{
+        	pTeb->InstrumentationCallbackDisabled = TRUE;
 
-        RtlAcquireSRWLockShared(&InstrumentationCallbackLock);
+        	RtlAcquireSRWLockShared(&InstrumentationCallbackLock);
 
 		switch (ContextRecord->Rip)
 		{
@@ -108,73 +108,74 @@ extern "C" void InstrumentationCallbackDispatcher(CONTEXT* ContextRecord)
 			}
 		}
 
-        RtlReleaseSRWLockShared(&InstrumentationCallbackLock);
+		RtlReleaseSRWLockShared(&InstrumentationCallbackLock);
 
-        pTeb->InstrumentationCallbackDisabled = FALSE;
-    }
+		pTeb->InstrumentationCallbackDisabled = FALSE;
+	}
 }
 
 NTSTATUS InitializeInstrumentationCallbackInternal(void* CallbackStub)
 {
-    PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION pici = { 0 };
+	PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION pici = { 0 };
+	
+	pici.Version = INSTRUMENTATION_CALLBACK_VERSION;
+	pici.Reserved = 0;
+	pici.Callback = CallbackStub;
 
-    pici.Version = INSTRUMENTATION_CALLBACK_VERSION;
-    pici.Reserved = 0;
-    pici.Callback = CallbackStub;
-
-    return NtSetInformationProcess(
-        GetCurrentProcess(),
-        ProcessInstrumentationCallback,
-        &pici,
-        sizeof(PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION)
-    );
+	return NtSetInformationProcess(
+        	GetCurrentProcess(),
+        	ProcessInstrumentationCallback,
+        	&pici,
+        	sizeof(PROCESS_INSTRUMENTATION_CALLBACK_INFORMATION)
+    	);
 }
 
 // Public methods
 
 NTSTATUS InitializeInstrumentationCallbacks()
 {
-    return InitializeInstrumentationCallbackInternal(&InstrumentationCallbackStub);
+	return InitializeInstrumentationCallbackInternal(&InstrumentationCallbackStub);
 }
 
 NTSTATUS UninitializeInstrumentationCallbacks()
 {
-    return InitializeInstrumentationCallbackInternal(NULL);
+	return InitializeInstrumentationCallbackInternal(NULL);
 }
 
 NTSTATUS SetInstrumentationCallback(
-    INSTRUMENTATION_CALLBACK_TYPE CallbackType,
-    void*                         CallbackRoutine
+	INSTRUMENTATION_CALLBACK_TYPE CallbackType,
+	void*                         CallbackRoutine
 )
 {
-    NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_SUCCESS;
 
-    RtlAcquireSRWLockExclusive(&InstrumentationCallbackLock);
+	RtlAcquireSRWLockExclusive(&InstrumentationCallbackLock);
 
-    switch (CallbackType)
-    {
+	switch (CallbackType)
+	{
 		case CallbackTypeRaiseUserException:
 			RaiseUserExceptionCallback = (RAISE_USER_EXCEPTION_CALLBACK)CallbackRoutine;
 			break;
-        case CallbackTypeUserApc:
-            UserApcCallback = (USER_APC_CALLBACK)CallbackRoutine;
-            break;
+        	case CallbackTypeUserApc:
+			UserApcCallback = (USER_APC_CALLBACK)CallbackRoutine;
+			break;
 		case CallbackTypeUserCallback:
 			UserWin32Callback = (USER_WIN32_CALLBACK)CallbackRoutine;
 			break;
-        case CallbackTypeUserException:
-            UserExceptionCallback = (USER_EXCEPTION_CALLBACK)CallbackRoutine;
-            break;
-        case CallbackTypeUserThreadStart:
-            UserThreadStartCallback = (USER_THREAD_START_CALLBACK)CallbackRoutine;
-            break;
-        case CallbackTypeSystemCallReturn:
-            SystemCallReturnCallback = (SYSRET_CALLBACK)CallbackRoutine;
-        default:
-            status = STATUS_NOT_IMPLEMENTED;
-    }
+        	case CallbackTypeUserException:
+            		UserExceptionCallback = (USER_EXCEPTION_CALLBACK)CallbackRoutine;
+            		break;
+        	case CallbackTypeUserThreadStart:
+            		UserThreadStartCallback = (USER_THREAD_START_CALLBACK)CallbackRoutine;
+           		 break;
+        	case CallbackTypeSystemCallReturn:
+            		SystemCallReturnCallback = (SYSRET_CALLBACK)CallbackRoutine;
+			break;
+        	default:
+            		status = STATUS_NOT_IMPLEMENTED;
+	}
 
-    RtlReleaseSRWLockExclusive(&InstrumentationCallbackLock);
+    	RtlReleaseSRWLockExclusive(&InstrumentationCallbackLock);
 
-    return status;
+   	return status;
 }
