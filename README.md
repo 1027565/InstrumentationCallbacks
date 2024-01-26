@@ -10,7 +10,7 @@ Currently, the library can be used to intercept the following:
 + User-mode kernel callbacks (such as those used by WIN32K)
 + Initialization of new user-mode threads
 
-The library's only dependency is NTDLL, so it can be run natively. It is currently only compatible with x86-64 (AMD64).
+The library's only dependency is NTDLL, so it can be run natively. It is currently only compatible with the x86-64 architecture.
 
 ## Credits
 + [instrumentation_callbacks](https://github.com/Deputation/instrumentation_callbacks) ([Deputation](https://github.com/Deputation))
