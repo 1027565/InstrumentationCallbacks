@@ -40,13 +40,13 @@ typedef void(*USER_WIN32_CALLBACK)(
 );
 
 typedef void(*USER_EXCEPTION_CALLBACK)(
-	CONTEXT*		      ContextRecord,
+	CONTEXT*	  ContextRecord,
 	EXCEPTION_RECORD* ExceptionRecord
 );
 
 typedef void(*USER_THREAD_START_CALLBACK)(
-    CONTEXT* ContextRecord,
-    void*    Parameter
+	CONTEXT* ContextRecord,
+	void*    Parameter
 );
 
 typedef void(*SYSRET_CALLBACK)(
